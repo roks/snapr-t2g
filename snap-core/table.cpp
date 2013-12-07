@@ -2339,7 +2339,8 @@ PNGraph TTable::ToPNGraphPar1() {
   //
   const int Last = Next.Len();
   int Nodes = 0;
-  #pragma omp parallel for schedule(static,Delta) reduction(+:Nodes)
+  // #pragma omp parallel for schedule(static,Delta) reduction(+:Nodes)
+  #pragma omp parallel for schedule(dynamic) reduction(+:Nodes)
   for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
     //if (Next[CurrRowIdx] == Invalid) {continue;}
 
@@ -2405,7 +2406,8 @@ PNGraph TTable::ToPNGraphPar1() {
 
   printf("Assign Threads %d\n", Threads);
 
-  #pragma omp parallel for schedule(static,Delta)
+  // #pragma omp parallel for schedule(static,Delta)
+  #pragma omp parallel for schedule(dynamic)
   for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
     //if (Next[CurrRowIdx] == Invalid) {continue;}
 
