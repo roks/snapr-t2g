@@ -2202,6 +2202,165 @@ PNEANet TTable::ToGraph(TAttrAggr AggrPolicy) {
   return Graph;
 }
 
+PNGraph TTable::ToPNGraph() {
+  TInt SVal, DVal;
+  const TInt SrcColIdx = GetColIdx(SrcCol);
+  const TInt DstColIdx = GetColIdx(DstCol);
+
+  //PNGraph Graph = PNGraph::New();
+  PNGraph Graph = TNGraph::New(4850000, 69000000);
+
+  // make single pass over all rows in the table
+  int Last = Next.Len();
+  int *ps = &IntCols[SrcColIdx][0].Val;
+  int *pd = &IntCols[DstColIdx][0].Val;
+  
+  for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
+    //if (Next[CurrRowIdx] == Invalid) {continue;}
+
+    //SVal = IntCols[SrcColIdx][CurrRowIdx];
+    //DVal = IntCols[DstColIdx][CurrRowIdx];
+
+    SVal = *ps++;
+    DVal = *pd++;
+
+    // add src and dst nodes to graph if they are not seen earlier
+
+    //if (!Graph->IsNode(SVal)) {Graph->AddNode(SVal);}
+    //if (!Graph->IsNode(DVal)) {Graph->AddNode(DVal);}
+
+    // add edge
+    //Graph->AddEdge(SVal, DVal);
+
+    // add nodes and edge
+    //Graph->AddNodesEdge(SVal, DVal);
+    Graph->AddOutEdge(SVal, DVal);
+    Graph->AddInEdge(SVal, DVal);
+  }
+
+  return Graph;
+}
+
+PNGraph TTable::ToPNGraphPar() {
+  PNGraph Graph = TNGraph::New(4850000, 69000000);
+  //PNGraph Graph = TNGraph::New(41700000, 1470000000);
+
+  //printf("TNGraph::New nodes %d, edges %d\n", Graph->GetNodes(), Graph->GetEdges());
+  const int Length = Graph->Reserved();
+  printf("TNGraph::New reserved %d\n", Length);
+
+  //TIntV OutVec(Length);
+  //TIntV InVec(Length);
+  
+  // make single pass over all rows in the table
+  
+  const int Threads = 8;
+  const int Delta = (Length + Threads - 1) / Threads;
+
+  #pragma omp parallel for schedule(static,1)
+  for (int t = 0; t < Threads; t++) {
+    const TInt SrcColIdx = GetColIdx(SrcCol);
+    const TInt DstColIdx = GetColIdx(DstCol);
+    const int L1 = Length;
+
+    const int tmin = Delta*t;
+    const int tmax = tmin + Delta;
+
+    TIntV OutVec(Delta);
+    TIntV InVec(Delta);
+
+    TInt SVal, DVal;
+
+    int count = 0;
+    printf("tmin %d, tmax %d\n", tmin, tmax);
+
+    int *ps = &IntCols[SrcColIdx][0].Val;
+    int *pd = &IntCols[DstColIdx][0].Val;
+
+    const int Last = Next.Len();
+    for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
+      //if (Next[CurrRowIdx] == Invalid) {continue;}
+
+      //SVal = IntCols[SrcColIdx][CurrRowIdx];
+      //DVal = IntCols[DstColIdx][CurrRowIdx];
+
+      SVal = *ps++;
+      DVal = *pd++;
+
+      //int SrcIdx = abs((17*SVal.GetPrimHashCd()) % L1);
+      int SrcIdx = abs((17*SVal.Val) % L1);
+      if (SrcIdx >= tmin  &&  SrcIdx < tmax) {
+        Graph->AddOutEdge1(SrcIdx, SVal, DVal);
+        OutVec[SrcIdx-tmin]++;
+        //count++;
+      }
+
+      //int DstIdx = abs((17*DVal.GetPrimHashCd()) % L1);
+      int DstIdx = abs((17*DVal.Val) % L1);
+      if (DstIdx >= tmin  &&  DstIdx < tmax) {
+        Graph->AddInEdge1(DstIdx, SVal, DVal);
+        InVec[DstIdx-tmin]++;
+        //count++;
+      }
+    }
+    printf("count %d\n", count);
+  }
+
+  return Graph;
+}
+
+PNGraph TTable::ToPNGraphPar1() {
+  //PNGraph Graph = TNGraph::New(4850000, 69000000);
+  PNGraph Graph = TNGraph::New(41700000, 1470000000);
+
+  //printf("TNGraph::New nodes %d, edges %d\n", Graph->GetNodes(), Graph->GetEdges());
+  const int Length = Graph->Reserved();
+  printf("TNGraph::New reserved %d\n", Length);
+
+  TIntV OutVec(Length);
+  TIntV InVec(Length);
+  
+  // make single pass over all rows in the table
+  
+  const int Threads = 40;
+  const int Delta = (Length + Threads - 1) / Threads;
+
+  printf("Threads %d\n", Threads);
+
+  const TInt SrcColIdx = GetColIdx(SrcCol);
+  const TInt DstColIdx = GetColIdx(DstCol);
+  const int L1 = Length;
+
+  //int *ps = &IntCols[SrcColIdx][0].Val;
+  //int *pd = &IntCols[DstColIdx][0].Val;
+
+  const int Last = Next.Len();
+  #pragma omp parallel for schedule(static,Delta)
+  for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
+    //if (Next[CurrRowIdx] == Invalid) {continue;}
+
+    TInt SVal = IntCols[SrcColIdx][CurrRowIdx];
+    TInt DVal = IntCols[DstColIdx][CurrRowIdx];
+
+    //SVal = *ps++;
+    //DVal = *pd++;
+
+    int SrcIdx = abs((SVal.GetPrimHashCd()) % L1);
+    //int SrcIdx = abs((17*SVal.Val) % L1);
+    Graph->AddOutEdge1(SrcIdx, SVal, DVal);
+    __sync_fetch_and_add(&OutVec[SrcIdx].Val, 1);
+    //OutVec[SrcIdx]++;
+
+    int DstIdx = abs((DVal.GetPrimHashCd()) % L1);
+    //int DstIdx = abs((17*DVal.Val) % L1);
+    Graph->AddInEdge1(DstIdx, SVal, DVal);
+    __sync_fetch_and_add(&InVec[DstIdx].Val, 1);
+    //InVec[DstIdx]++;
+  }
+
+  return Graph;
+}
+
 void TTable::InitRowIdBuckets(int NumBuckets) {
   for (int i = 0; i < RowIdBuckets.Len(); i++) {
     RowIdBuckets[i].Clr();
@@ -2443,6 +2602,34 @@ PTable TTable::GetEdgeTable(const PNEANet& Network, const TStr& TableName, TTabl
     for (int i = 0; i < StrAttrNames.Len(); i++){
       T->AddStrVal(i, Network->GetStrAttrDatE(EdgeI,StrAttrNames[i]));
     }
+    Cnt++;
+    EdgeI++;
+  }
+  // set number of rows and "Next" vector
+  T->NumRows = Cnt;
+  T->NumValidRows = T->NumRows;
+  T->Next = TIntV(T->NumRows,0);
+  for(TInt i = 0; i < T->NumRows-1; i++){
+    T->Next.Add(i+1);
+  }
+  T->LastValidRow = T->NumRows-1;
+  T->Next.Add(Last);
+  return T;
+}
+
+PTable TTable::GetEdgeTablePN(const PNGraph& Network, const TStr& TableName, TTableContext& Context){
+  Schema SR;
+  SR.Add(TPair<TStr,TAttrType>("src_id",atInt));
+  SR.Add(TPair<TStr,TAttrType>("dst_id",atInt));
+
+  PTable T = New(TableName, SR, Context);
+
+  TInt Cnt = 0;
+  // populate table columns
+  TNGraph::TEdgeI EdgeI = Network->BegEI();
+  while(EdgeI < Network->EndEI()){
+    T->IntCols[0].Add(EdgeI.GetSrcNId());
+    T->IntCols[1].Add(EdgeI.GetDstNId());
     Cnt++;
     EdgeI++;
   }

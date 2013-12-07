@@ -161,6 +161,13 @@ TNGraph have no IDs we return -1.
 Function aborts if SrcNId or DstNId are not nodes in the graph.
 ///
 
+/// TNGraph::AddNodeEdge
+If the edge already exists return -2. If the edge was successfully added
+return -1.
+Normally the function should return an ID of the edge added but since edges in
+TNGraph have no IDs we return -1.
+///
+
 /// TNGraph::DelEdge
 If the edge (SrcNId, DstNId) does not exist in the graph function still
 completes.

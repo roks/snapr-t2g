@@ -249,7 +249,7 @@ public:
   /// Node iterator. Only forward iteration (operator++) is supported.
   class TNodeI {
   private:
-    typedef THash<TInt, TNode>::TIter THashIter;
+    typedef TPHash<TInt, TNode>::TIter THashIter;
     THashIter NodeHI;
   public:
     TNodeI() : NodeHI() { }
@@ -308,7 +308,8 @@ public:
 private:
   TCRef CRef;
   TInt MxNId;
-  THash<TInt, TNode> NodeH;
+  //THash<TInt, TNode> NodeH;
+  TPHash<TInt, TNode> NodeH;
 private:
   TNode& GetNode(const int& NId) { return NodeH.GetDat(NId); }
   const TNode& GetNode(const int& NId) const { return NodeH.GetDat(NId); }
@@ -359,12 +360,20 @@ public:
   /// Returns the maximum id of a any node in the graph.
   int GetMxNId() const { return MxNId; }
 
+  int Reserved() const {return NodeH.GetReservedKeyIds();}
+
   /// Returns the number of edges in the graph.
   int GetEdges() const;
   /// Adds an edge from node IDs SrcNId to node DstNId to the graph. ##TNGraph::AddEdge
   int AddEdge(const int& SrcNId, const int& DstNId);
   /// Adds an edge from EdgeI.GetSrcNId() to EdgeI.GetDstNId() to the graph.
   int AddEdge(const TEdgeI& EdgeI) { return AddEdge(EdgeI.GetSrcNId(), EdgeI.GetDstNId()); }
+  /// Adds adds nodes to the graph, if they do not exist yet, and then adds an edge from node IDs SrcNId to node DstNId. ##TNGraph::AddNodeEdge
+  int AddNodesEdge(const int& SrcNId, const int& DstNId);
+  int AddOutEdge(const int& SrcNId, const int& DstNId);
+  int AddInEdge(const int& SrcNId, const int& DstNId);
+  int AddOutEdge1(const int& SrcIdx, const int& SrcNId, const int& DstNId);
+  int AddInEdge1(const int& DstIdx, const int& SrcNId, const int& DstNId);
   /// Deletes an edge from node IDs SrcNId to DstNId from the graph. ##TNGraph::DelEdge
   void DelEdge(const int& SrcNId, const int& DstNId, const bool& IsDir = true);
   /// Tests whether an edge from node IDs SrcNId to DstNId exists in the graph.
@@ -390,7 +399,12 @@ public:
   /// Deletes all nodes and edges from the graph.
   void Clr() { MxNId=0; NodeH.Clr(); }
   /// Reserves memory for a graph of Nodes nodes and Edges edges.
-  void Reserve(const int& Nodes, const int& Edges) { if (Nodes>0) { NodeH.Gen(Nodes/2); } }
+  void Reserve(const int& Nodes, const int& Edges) {
+    if (Nodes>0) {
+      NodeH.Gen(Nodes);
+      //printf("size ports %d, data %d %d\n",NodeH.PortV.Reserved(), NodeH.KeyDatV.Reserved(), NodeH.GetReservedKeyIds());
+    } 
+  }
   /// Reserves memory for node ID NId having InDeg in-edges.
   void ReserveNIdInDeg(const int& NId, const int& InDeg) { GetNode(NId).InNIdV.Reserve(InDeg); }
   /// Reserves memory for node ID NId having OutDeg out-edges.

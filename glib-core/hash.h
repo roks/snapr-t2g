@@ -91,7 +91,7 @@ public:
   static const unsigned int HashPrimeT[HashPrimes];
 public:
   typedef THashKeyDatI<TKey, TDat> TIter;
-private:
+//private:
   typedef THashKeyDat<TKey, TDat> THKeyDat;
   typedef TPair<TKey, TDat> TKeyDatP;
   TIntV PortV;
@@ -190,6 +190,7 @@ public:
   bool IsKeyIdEqKeyN() const {return FreeKeys==0;}
 
   int AddKey(const TKey& Key);
+  int AddKey1(const TKey& Key, bool& Found);
   TDat& AddDatId(const TKey& Key){
     int KeyId=AddKey(Key); return KeyDatV[KeyId].Dat=KeyId;}
   TDat& AddDat(const TKey& Key){return KeyDatV[AddKey(Key)].Dat;}
@@ -324,7 +325,10 @@ void THash<TKey, TDat, THashFunc>::Clr(const bool& DoDel, const int& NoDelLim, c
 
 template<class TKey, class TDat, class THashFunc>
 int THash<TKey, TDat, THashFunc>::AddKey(const TKey& Key){
-  if ((KeyDatV.Len()>2*PortV.Len())||PortV.Empty()){Resize();}
+  if ((KeyDatV.Len()>2*PortV.Len())||PortV.Empty()){
+    //printf("THash::AddKey Resize %d %d\n", KeyDatV.Len(), PortV.Len());
+    Resize();
+  }
   const int PortN=abs(THashFunc::GetPrimHashCd(Key)%PortV.Len());
   const int HashCd=abs(THashFunc::GetSecHashCd(Key));
   int PrevKeyId=-1;
@@ -349,6 +353,43 @@ int THash<TKey, TDat, THashFunc>::AddKey(const TKey& Key){
     } else {
       KeyDatV[PrevKeyId].Next=KeyId;
     }
+  }
+  return KeyId;
+}
+
+template<class TKey, class TDat, class THashFunc>
+int THash<TKey, TDat, THashFunc>::AddKey1(const TKey& Key, bool& Found){
+  if ((KeyDatV.Len()>2*PortV.Len())||PortV.Empty()){
+    //printf("THash::AddKey Resize %d %d\n", KeyDatV.Len(), PortV.Len());
+    Resize();
+  }
+  const int PortN=abs(THashFunc::GetPrimHashCd(Key)%PortV.Len());
+  const int HashCd=abs(THashFunc::GetSecHashCd(Key));
+  int PrevKeyId=-1;
+  int KeyId=PortV[PortN];
+  while ((KeyId!=-1) &&
+   !((KeyDatV[KeyId].HashCd==HashCd) && (KeyDatV[KeyId].Key==Key))){
+    PrevKeyId=KeyId; KeyId=KeyDatV[KeyId].Next;}
+
+  if (KeyId==-1){
+    Found = false;
+    if (FFreeKeyId==-1){
+      KeyId=KeyDatV.Add(THKeyDat(-1, HashCd, Key));
+    } else {
+      KeyId=FFreeKeyId; FFreeKeyId=KeyDatV[FFreeKeyId].Next; FreeKeys--;
+      //KeyDatV[KeyId]=TKeyDat(-1, HashCd, Key); // slow version
+      KeyDatV[KeyId].Next=-1;
+      KeyDatV[KeyId].HashCd=HashCd;
+      KeyDatV[KeyId].Key=Key;
+      //KeyDatV[KeyId].Dat=TDat(); // already empty
+    }
+    if (PrevKeyId==-1){
+      PortV[PortN]=KeyId;
+    } else {
+      KeyDatV[PrevKeyId].Next=KeyId;
+    }
+  } else {
+    Found = true;
   }
   return KeyId;
 }

@@ -455,6 +455,9 @@ public:
 /***** Graph handling *****/
   // Create a graph out of the FINAL table
   PNEANet ToGraph(TAttrAggr AggrPolicy);
+  PNGraph ToPNGraph();
+  PNGraph ToPNGraphPar();
+  PNGraph ToPNGraphPar1();
   
   // Create a sequence of graphs based on values of column SplitAttr and windows
   // specified by JumpSize and WindowSize.
@@ -515,6 +518,7 @@ public:
   /* Extract node and edge TTables from PNEANet */
   static PTable GetNodeTable(const PNEANet& Network, const TStr& TableName, TTableContext& Context);
   static PTable GetEdgeTable(const PNEANet& Network, const TStr& TableName, TTableContext& Context);
+  static PTable GetEdgeTablePN(const PNGraph& Network, const TStr& TableName, TTableContext& Context);
 
   /* Extract node and edge property TTables from THash */
   static PTable GetFltNodePropertyTable(const PNEANet& Network, const TStr& TableName, const TIntFltH& Property, const TStr& NodeAttrName, const TAttrType& NodeAttrType, const TStr& PropertyAttrName, TTableContext& Context);

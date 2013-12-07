@@ -254,6 +254,7 @@ int TNGraph::AddNode(const int& NId, const TVecPool<TInt>& Pool, const int& SrcV
 }
 
 void TNGraph::DelNode(const int& NId) {
+#if 0
   { TNode& Node = GetNode(NId);
   for (int e = 0; e < Node.GetOutDeg(); e++) {
   const int nbr = Node.GetOutNId(e);
@@ -270,6 +271,7 @@ void TNGraph::DelNode(const int& NId) {
     if (n!= -1) { N.OutNIdV.Del(n); }
   } }
   NodeH.DelKey(NId);
+#endif
 }
 
 int TNGraph::GetEdges() const {
@@ -286,6 +288,138 @@ int TNGraph::AddEdge(const int& SrcNId, const int& DstNId) {
   if (IsEdge(SrcNId, DstNId)) { return -2; }
   GetNode(SrcNId).OutNIdV.AddSorted(DstNId);
   GetNode(DstNId).InNIdV.AddSorted(SrcNId);
+  return -1; // edge id
+}
+
+#if 0
+int TNGraph::AddNodesEdge(const int& SrcNId, const int& DstNId) {
+
+  if (!IsNode(SrcNId)) {
+    NodeH.AddDat(SrcNId, TNode(SrcNId));
+    MxNId = TMath::Mx(SrcNId+1, MxNId());
+  }
+
+  if (!IsNode(DstNId)) {
+    NodeH.AddDat(DstNId, TNode(DstNId));
+    MxNId = TMath::Mx(DstNId+1, MxNId());
+  }
+
+  //if (IsEdge(SrcNId, DstNId)) { return -2; }
+  //GetNode(SrcNId).OutNIdV.AddSorted(DstNId);
+  //GetNode(DstNId).InNIdV.AddSorted(SrcNId);
+
+  // use keyids to add dst and src nodes
+  GetNode(SrcNId).OutNIdV.Add(DstNId);
+  GetNode(DstNId).InNIdV.Add(SrcNId);
+
+  // TODO, edge lists need to be sorted at the end
+
+  return -1; // edge id
+}
+#endif
+
+#if 1
+int TNGraph::AddNodesEdge(const int& SrcNId, const int& DstNId) {
+
+  bool Found;
+  int SrcKeyId;
+  int DstKeyId;
+
+  SrcKeyId = NodeH.AddKey1(SrcNId, Found);
+  if (!Found) {
+    NodeH[SrcKeyId] = TNode(SrcNId);
+    MxNId = TMath::Mx(SrcNId+1, MxNId());
+  }
+
+  DstKeyId = NodeH.AddKey1(DstNId, Found);
+  if (!Found) {
+    NodeH[DstKeyId] = TNode(DstNId);
+    MxNId = TMath::Mx(DstNId+1, MxNId());
+  }
+
+  //if (IsEdge(SrcNId, DstNId)) { return -2; }
+  //GetNode(SrcNId).OutNIdV.AddSorted(DstNId);
+  //GetNode(DstNId).InNIdV.AddSorted(SrcNId);
+
+  // use keyids to add dst and src nodes
+  //GetNode(SrcNId).OutNIdV.Add(DstNId);
+  NodeH[SrcKeyId].OutNIdV.Add(DstNId);
+  //GetNode(DstNId).InNIdV.Add(SrcNId);
+  NodeH[DstKeyId].InNIdV.Add(SrcNId);
+
+  // TODO:RS, edge lists need to be sorted at the end
+
+  return -1; // edge id
+}
+#endif
+
+int TNGraph::AddOutEdge(const int& SrcNId, const int& DstNId) {
+  bool Found;
+  int SrcKeyId;
+
+  SrcKeyId = NodeH.AddKey1(SrcNId, Found);
+  if (!Found) {
+    NodeH[SrcKeyId] = TNode(SrcNId);
+    MxNId = TMath::Mx(SrcNId+1, MxNId());
+  }
+  //GetNode(SrcNId).OutNIdV.Add(DstNId);
+  NodeH[SrcKeyId].OutNIdV.Add(DstNId);
+
+  // TODO:RS, edge lists need to be sorted at the end
+
+  return -1; // edge id
+}
+
+int TNGraph::AddInEdge(const int& SrcNId, const int& DstNId) {
+  bool Found;
+  int DstKeyId; 
+
+  DstKeyId = NodeH.AddKey1(DstNId, Found);
+  if (!Found) {
+    NodeH[DstKeyId] = TNode(DstNId);
+    MxNId = TMath::Mx(DstNId+1, MxNId());
+  }
+  //GetNode(DstNId).InNIdV.Add(SrcNId);
+  NodeH[DstKeyId].InNIdV.Add(SrcNId);
+
+  // TODO:RS, edge lists need to be sorted at the end
+
+  return -1; // edge id
+}
+
+int TNGraph::AddOutEdge1(const int& SrcIdx, const int& SrcNId, const int& DstNId) {
+  bool Found;
+  int SrcKeyId;
+
+  //SrcKeyId = NodeH.AddKey2(SrcIdx, SrcNId, Found);
+  SrcKeyId = NodeH.AddKey12(SrcIdx, SrcNId, Found);
+  if (!Found) {
+    NodeH[SrcKeyId] = TNode(SrcNId);
+    //MxNId = TMath::Mx(SrcNId+1, MxNId());
+  }
+  //GetNode(SrcNId).OutNIdV.Add(DstNId);
+  //NodeH[SrcKeyId].OutNIdV.Add1(DstNId);
+
+  // TODO:RS, edge lists need to be sorted at the end
+
+  return -1; // edge id
+}
+
+int TNGraph::AddInEdge1(const int& DstIdx, const int& SrcNId, const int& DstNId) {
+  bool Found;
+  int DstKeyId; 
+
+  //DstKeyId = NodeH.AddKey2(DstIdx, DstNId, Found);
+  DstKeyId = NodeH.AddKey12(DstIdx, DstNId, Found);
+  if (!Found) {
+    NodeH[DstKeyId] = TNode(DstNId);
+    //MxNId = TMath::Mx(DstNId+1, MxNId());
+  }
+  //GetNode(DstNId).InNIdV.Add(SrcNId);
+  //NodeH[DstKeyId].InNIdV.Add1(SrcNId);
+
+  // TODO:RS, edge lists need to be sorted at the end
+
   return -1; // edge id
 }
 
@@ -327,11 +461,13 @@ void TNGraph::GetNIdV(TIntV& NIdV) const {
 }
 
 void TNGraph::Defrag(const bool& OnlyNodeLinks) {
+#if 0
   for (int n = NodeH.FFirstKeyId(); NodeH.FNextKeyId(n); ) {
     TNode& Node = NodeH[n];
     Node.InNIdV.Pack();  Node.OutNIdV.Pack();
   }
   if (! OnlyNodeLinks && ! NodeH.IsKeyIdEqKeyN()) { NodeH.Defrag(); }
+#endif
 }
 
 // for each node check that their neighbors are also nodes
