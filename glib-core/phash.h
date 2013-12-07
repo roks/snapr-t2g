@@ -161,6 +161,7 @@ public:
   void Clr(const bool& DoDel=true);
   bool Empty() const {return Len()==0;}
   int Len() const {return NumVals;}
+  void SetLen(const int& Length) {NumVals=Length;}
   int GetMxKeyIds() const {return Table.Len();}
 //bool IsKeyIdEqKeyN() const {return FreeKeys==0;}
   int GetReservedKeyIds() const {return Table.Reserved();}
@@ -313,10 +314,15 @@ int TPHash<TKey, TDat, THashFunc>::AddKey12(const int& BegTableN, const TKey& Ke
   //   2: occupied slot, valid key
 
   int TableN = BegTableN;
-  Found = false;
   do {
     int HashCd = Table[TableN].HashCd.Val;
-    if (HashCd != -1) {
+    if (HashCd == -1) {
+      // an empty slot
+      if (__sync_bool_compare_and_swap(&Table[TableN].HashCd.Val, -1, 1)) {
+        // an empty slot has been claimed, key is invalid
+        break;
+      }
+    } else {
       // slot is occupied
       if (HashCd != 2) {
         // key is not yet valid, wait for a valid key
@@ -329,21 +335,19 @@ int TPHash<TKey, TDat, THashFunc>::AddKey12(const int& BegTableN, const TKey& Ke
         Found = true;
         return TableN;
       }
-    } else if (__sync_bool_compare_and_swap(&Table[TableN].HashCd.Val, -1, 1)) {
-      // an empty slot has been claimed
-      break;
-    }
-    
-    // move to the next slot
-    TableN++;
-    if (TableN >= Length) {
-      TableN = 0;
+      // move to the next slot
+      TableN++;
+      if (TableN >= Length) {
+        TableN = 0;
+      }
     }
   } while (1);
 
   // write the key, indicate a valid key
   Table[TableN].Key = Key;
   Table[TableN].HashCd.Val = 2;
+
+  Found = false;
   return TableN;
 }
 

@@ -402,7 +402,7 @@ int TNGraph::AddOutEdge1(const int& SrcIdx, const int& SrcNId, const int& DstNId
 
   // TODO:RS, edge lists need to be sorted at the end
 
-  return -1; // edge id
+  return Found;
 }
 
 int TNGraph::AddInEdge1(const int& DstIdx, const int& SrcNId, const int& DstNId) {
@@ -420,7 +420,7 @@ int TNGraph::AddInEdge1(const int& DstIdx, const int& SrcNId, const int& DstNId)
 
   // TODO:RS, edge lists need to be sorted at the end
 
-  return -1; // edge id
+  return Found;
 }
 
 void TNGraph::DelEdge(const int& SrcNId, const int& DstNId, const bool& IsDir) {

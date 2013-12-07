@@ -2335,7 +2335,8 @@ PNGraph TTable::ToPNGraphPar1() {
   //int *pd = &IntCols[DstColIdx][0].Val;
 
   const int Last = Next.Len();
-  #pragma omp parallel for schedule(static,Delta)
+  int Nodes = 0;
+  #pragma omp parallel for schedule(static,Delta) reduction(+:Nodes)
   for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
     //if (Next[CurrRowIdx] == Invalid) {continue;}
 
@@ -2347,16 +2348,28 @@ PNGraph TTable::ToPNGraphPar1() {
 
     int SrcIdx = abs((SVal.GetPrimHashCd()) % L1);
     //int SrcIdx = abs((17*SVal.Val) % L1);
-    Graph->AddOutEdge1(SrcIdx, SVal, DVal);
+    if (!Graph->AddOutEdge1(SrcIdx, SVal, DVal)) {
+      Nodes++;
+    }
     __sync_fetch_and_add(&OutVec[SrcIdx].Val, 1);
     //OutVec[SrcIdx]++;
 
     int DstIdx = abs((DVal.GetPrimHashCd()) % L1);
     //int DstIdx = abs((17*DVal.Val) % L1);
-    Graph->AddInEdge1(DstIdx, SVal, DVal);
+    if (!Graph->AddInEdge1(DstIdx, SVal, DVal)) {
+      Nodes++;
+    }
     __sync_fetch_and_add(&InVec[DstIdx].Val, 1);
     //InVec[DstIdx]++;
   }
+  Graph->SetNodes(Nodes);
+  printf("nodes %d\n", Nodes);
+
+  uint Edges = 0;
+  for (int i = 0; i < Length; i++) {
+    Edges += OutVec[i] + InVec[i];
+  }
+  printf("edges %d\n", (int) (Edges/2));
 
   return Graph;
 }

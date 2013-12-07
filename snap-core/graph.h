@@ -335,6 +335,8 @@ public:
   
   /// Returns the number of nodes in the graph.
   int GetNodes() const { return NodeH.Len(); }
+  /// Sets the number of nodes in the graph.
+  void SetNodes(const int& Length) { NodeH.SetLen(Length); }
   /// Adds a node of ID NId to the graph. ##TNGraph::AddNode
   int AddNode(int NId = -1);
   /// Adds a node of ID NodeI.GetId() to the graph.
