@@ -423,6 +423,14 @@ int TNGraph::AddInEdge1(const int& DstIdx, const int& SrcNId, const int& DstNId)
   return Found;
 }
 
+void TNGraph::AddOutEdge2(const int& SrcNId, const int& DstNId) {
+  NodeH[NodeH.GetKeyId(SrcNId)].OutNIdV.AddAtm(DstNId);
+}
+
+void TNGraph::AddInEdge2(const int& SrcNId, const int& DstNId) {
+  NodeH[NodeH.GetKeyId(DstNId)].InNIdV.AddAtm(SrcNId);
+}
+
 void TNGraph::DelEdge(const int& SrcNId, const int& DstNId, const bool& IsDir) {
   IAssertR(IsNode(SrcNId) && IsNode(DstNId), TStr::Fmt("%d or %d not a node.", SrcNId, DstNId).CStr());
   { TNode& N = GetNode(SrcNId);

@@ -529,6 +529,8 @@ public:
   /// Adds a new element at the end of the vector, after its current last element. ##TVec::Add1
   TSizeTy Add(const TVal& Val){ AssertR(MxVals!=-1, "This vector was obtained from TVecPool. Such vectors cannot change its size!");
     if (Vals==MxVals){Resize();} ValT[Vals]=Val; return Vals++;}
+  TSizeTy AddAtm(const TVal& Val){ const int Idx = __sync_fetch_and_add(&Vals, 1);
+     ValT[Idx]=Val; return Idx;}
   TSizeTy Add1(const TVal& Val){ 
     if (Vals==MxVals){/*Resize();*/} /*ValT[Vals]=Val*/; return Vals++;}
   TSizeTy Add(TVal& Val){ AssertR(MxVals!=-1, "This vector was obtained from TVecPool. Such vectors cannot change its size!");
@@ -588,6 +590,8 @@ public:
   void BSort(const TSizeTy& MnLValN, const TSizeTy& MxRValN, const bool& Asc);
   /// Insertion sorts the values between positions <tt>MnLValN...MxLValN</tt>. ##TVec::ISort
   void ISort(const TSizeTy& MnLValN, const TSizeTy& MxRValN, const bool& Asc);
+  /// Sorts the elements in the vector in the ascending order.
+  void RSort();
   /// Partitions the values between positions <tt>MnLValN...MxLValN</tt>. ##TVec::Partition
   TSizeTy Partition(const TSizeTy& MnLValN, const TSizeTy& MxRValN, const bool& Asc);
   /// Quick sorts the values between positions <tt>MnLValN...MxLValN</tt>. ##TVec::QSort
@@ -1062,6 +1066,29 @@ void TVec<TVal, TSizeTy>::ISort(const TSizeTy& MnLValN, const TSizeTy& MxRValN, 
     }
   }
 }
+
+template <class TVal, class TSizeTy>
+void TVec<TVal, TSizeTy>::RSort(){
+  const TSizeTy& MxRValN = Vals-1;
+  for (TSizeTy ValN1=0; ValN1<=MxRValN; ValN1++){
+    for (TSizeTy ValN2=MxRValN; ValN2>ValN1; ValN2--){
+      if (ValT[ValN2]<ValT[ValN2-1]){Swap(ValN2, ValN2-1);}
+    }
+  }
+}
+
+#if 0
+template <class TVal, class TSizeTy>
+void TVec<TVal, TSizeTy>::RSort(){
+  const TSizeTy& MxRValN = Vals-1;
+  for (TSizeTy ValN1=1; ValN1<=MxRValN; ValN1++){
+    TVal Val=ValT[ValN1]; TSizeTy ValN2=ValN1;
+    while ((ValN2>0)&&(ValT[ValN2-1]>Val)){
+      ValT[ValN2]=ValT[ValN2-1]; ValN2--;}
+    ValT[ValN2]=Val;
+  }
+}
+#endif
 
 template <class TVal, class TSizeTy>
 TSizeTy TVec<TVal, TSizeTy>::GetPivotValN(const TSizeTy& LValN, const TSizeTy& RValN) const {

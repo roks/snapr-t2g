@@ -376,6 +376,8 @@ public:
   int AddInEdge(const int& SrcNId, const int& DstNId);
   int AddOutEdge1(const int& SrcIdx, const int& SrcNId, const int& DstNId);
   int AddInEdge1(const int& DstIdx, const int& SrcNId, const int& DstNId);
+  void AddOutEdge2(const int& SrcNId, const int& DstNId);
+  void AddInEdge2(const int& SrcNId, const int& DstNId);
   /// Deletes an edge from node IDs SrcNId to DstNId from the graph. ##TNGraph::DelEdge
   void DelEdge(const int& SrcNId, const int& DstNId, const bool& IsDir = true);
   /// Tests whether an edge from node IDs SrcNId to DstNId exists in the graph.
@@ -411,6 +413,10 @@ public:
   void ReserveNIdInDeg(const int& NId, const int& InDeg) { GetNode(NId).InNIdV.Reserve(InDeg); }
   /// Reserves memory for node ID NId having OutDeg out-edges.
   void ReserveNIdOutDeg(const int& NId, const int& OutDeg) { GetNode(NId).OutNIdV.Reserve(OutDeg); }
+  /// Reserves memory for node Idx having InDeg in-edges and OutDeg out-edges.
+  void ReserveNodeDegs(const int& Idx, const int& InDeg, const int& OutDeg) { if (InDeg > 0) NodeH[Idx].InNIdV.Reserve(InDeg); if (OutDeg > 0) NodeH[Idx].OutNIdV.Reserve(OutDeg); }
+  /// Sorts in-edges and out-edges.
+  void SortEdges(const int& Idx, const int& InDeg, const int& OutDeg) { if (InDeg > 0) NodeH[Idx].InNIdV.Sort(); if (OutDeg > 0) NodeH[Idx].OutNIdV.Sort(); }
   /// Defragments the graph. ##TNGraph::Defrag
   void Defrag(const bool& OnlyNodeLinks=false);
   /// Checks the graph data structure for internal consistency. ##TNGraph::IsOk

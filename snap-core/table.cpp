@@ -2314,18 +2314,18 @@ PNGraph TTable::ToPNGraphPar1() {
   PNGraph Graph = TNGraph::New(41700000, 1470000000);
 
   //printf("TNGraph::New nodes %d, edges %d\n", Graph->GetNodes(), Graph->GetEdges());
-  const int Length = Graph->Reserved();
-  printf("TNGraph::New reserved %d\n", Length);
-
-  TIntV OutVec(Length);
-  TIntV InVec(Length);
+  printf("TNGraph::New reserved %d\n", Graph->Reserved());
   
   // make single pass over all rows in the table
   
-  const int Threads = 40;
-  const int Delta = (Length + Threads - 1) / Threads;
+  int Length = Graph->Reserved();
+  int Threads = 40;
+  int Delta = (Length + Threads - 1) / Threads;
 
-  printf("Threads %d\n", Threads);
+  printf("Build Threads %d\n", Threads);
+
+  TIntV OutVec(Length);
+  TIntV InVec(Length);
 
   const TInt SrcColIdx = GetColIdx(SrcCol);
   const TInt DstColIdx = GetColIdx(DstCol);
@@ -2334,6 +2334,9 @@ PNGraph TTable::ToPNGraphPar1() {
   //int *ps = &IntCols[SrcColIdx][0].Val;
   //int *pd = &IntCols[DstColIdx][0].Val;
 
+  //
+  //  build the node hash table, count the size of edge lists
+  //
   const int Last = Next.Len();
   int Nodes = 0;
   #pragma omp parallel for schedule(static,Delta) reduction(+:Nodes)
@@ -2370,6 +2373,70 @@ PNGraph TTable::ToPNGraphPar1() {
     Edges += OutVec[i] + InVec[i];
   }
   printf("edges %d\n", (int) (Edges/2));
+
+  //
+  //  allocate edge lists
+  //
+  
+  Length = Graph->Reserved();
+  Threads = 1;
+  Delta = (Length + Threads - 1) / Threads;
+
+  printf("Allocate Threads %d\n", Threads);
+
+  // #pragma omp parallel for schedule(static,Delta)
+  // omp_set_num_threads(Threads);
+  // #pragma omp parallel for schedule(static)
+  for (int Idx = 0; Idx < Length; Idx++) {
+    if (OutVec[Idx] > 0  ||  InVec[Idx] > 0) {
+      Graph->ReserveNodeDegs(Idx, InVec[Idx], OutVec[Idx]);
+    }
+  }
+
+  printf("allocated edge lists\n");
+
+  //
+  //  assign edges
+  //
+
+  Length = Graph->Reserved();
+  Threads = 80;
+  Delta = (Length + Threads - 1) / Threads;
+
+  printf("Assign Threads %d\n", Threads);
+
+  #pragma omp parallel for schedule(static,Delta)
+  for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
+    //if (Next[CurrRowIdx] == Invalid) {continue;}
+
+    TInt SVal = IntCols[SrcColIdx][CurrRowIdx];
+    TInt DVal = IntCols[DstColIdx][CurrRowIdx];
+
+    Graph->AddOutEdge2(SVal, DVal);
+    Graph->AddInEdge2(SVal, DVal);
+  }
+
+  printf("allocated edge lists\n");
+
+  //
+  //  sort edges
+  //
+
+  Length = Graph->Reserved();
+  Threads = 160;
+  Delta = (Length + Threads - 1) / Threads;
+
+  printf("Sort Threads %d\n", Threads);
+
+  // #pragma omp parallel for schedule(static,Delta)
+  #pragma omp parallel for schedule(dynamic)
+  for (int Idx = 0; Idx < Length; Idx++) {
+    if (OutVec[Idx] > 0  ||  InVec[Idx] > 0) {
+      Graph->SortEdges(Idx, InVec[Idx], OutVec[Idx]);
+    }
+  }
+
+  printf("sorted edge lists\n");
 
   return Graph;
 }
