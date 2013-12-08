@@ -69,7 +69,7 @@ public:
   bool IsEnd() const { return EndI == KeyDatI; }
   
   const TKey& GetKey() const {Assert((KeyDatI!=NULL)&&(KeyDatI->HashCd!=-1)); return KeyDatI->Key;}
-  const TDat& GetDat() const {Assert((KeyDatI!=NULL)&&(KeyDatI->HashCd!=-1)); return KeyDatI->Dat;}
+  const TDat& GetDat() const {/*Assert((KeyDatI!=NULL)&&(KeyDatI->HashCd!=-1));*/ return KeyDatI->Dat;}
   TDat& GetDat() {Assert((KeyDatI!=NULL)&&(KeyDatI->HashCd!=-1)); return KeyDatI->Dat;}
 };
 

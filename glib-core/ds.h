@@ -590,8 +590,10 @@ public:
   void BSort(const TSizeTy& MnLValN, const TSizeTy& MxRValN, const bool& Asc);
   /// Insertion sorts the values between positions <tt>MnLValN...MxLValN</tt>. ##TVec::ISort
   void ISort(const TSizeTy& MnLValN, const TSizeTy& MxRValN, const bool& Asc);
+#if 0
   /// Sorts the elements in the vector in the ascending order.
   void RSort();
+#endif
   /// Partitions the values between positions <tt>MnLValN...MxLValN</tt>. ##TVec::Partition
   TSizeTy Partition(const TSizeTy& MnLValN, const TSizeTy& MxRValN, const bool& Asc);
   /// Quick sorts the values between positions <tt>MnLValN...MxLValN</tt>. ##TVec::QSort
@@ -1067,6 +1069,7 @@ void TVec<TVal, TSizeTy>::ISort(const TSizeTy& MnLValN, const TSizeTy& MxRValN, 
   }
 }
 
+#if 0
 template <class TVal, class TSizeTy>
 void TVec<TVal, TSizeTy>::RSort(){
   const TSizeTy& MxRValN = Vals-1;
@@ -1076,6 +1079,7 @@ void TVec<TVal, TSizeTy>::RSort(){
     }
   }
 }
+#endif
 
 #if 0
 template <class TVal, class TSizeTy>

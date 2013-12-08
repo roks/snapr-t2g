@@ -2208,7 +2208,9 @@ PNGraph TTable::ToPNGraph() {
   const TInt DstColIdx = GetColIdx(DstCol);
 
   //PNGraph Graph = PNGraph::New();
-  PNGraph Graph = TNGraph::New(4850000, 69000000);
+  //PNGraph Graph = TNGraph::New(4850000, 69000000);
+  PNGraph Graph = TNGraph::New(41700000, 1470000000);
+  printf("TNGraph::New reserved %d\n", Graph->Reserved());
 
   // make single pass over all rows in the table
   int Last = Next.Len();
@@ -2339,8 +2341,7 @@ PNGraph TTable::ToPNGraphPar1() {
   //
   const int Last = Next.Len();
   int Nodes = 0;
-  // #pragma omp parallel for schedule(static,Delta) reduction(+:Nodes)
-  #pragma omp parallel for schedule(dynamic) reduction(+:Nodes)
+  #pragma omp parallel for schedule(static,Delta) reduction(+:Nodes)
   for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
     //if (Next[CurrRowIdx] == Invalid) {continue;}
 
@@ -2385,6 +2386,7 @@ PNGraph TTable::ToPNGraphPar1() {
 
   printf("Allocate Threads %d\n", Threads);
 
+  // requires memory allocation, no threads seems the best
   // #pragma omp parallel for schedule(static,Delta)
   // omp_set_num_threads(Threads);
   // #pragma omp parallel for schedule(static)
@@ -2406,8 +2408,7 @@ PNGraph TTable::ToPNGraphPar1() {
 
   printf("Assign Threads %d\n", Threads);
 
-  // #pragma omp parallel for schedule(static,Delta)
-  #pragma omp parallel for schedule(dynamic)
+  #pragma omp parallel for schedule(static,Delta)
   for (int CurrRowIdx = 0; CurrRowIdx < Last; CurrRowIdx++) {
     //if (Next[CurrRowIdx] == Invalid) {continue;}
 
@@ -2425,10 +2426,9 @@ PNGraph TTable::ToPNGraphPar1() {
   //
 
   Length = Graph->Reserved();
-  Threads = 160;
-  Delta = (Length + Threads - 1) / Threads;
-
-  printf("Sort Threads %d\n", Threads);
+  //Threads = 160;
+  //Delta = (Length + Threads - 1) / Threads;
+  //printf("Sort Threads %d\n", Threads);
 
   // #pragma omp parallel for schedule(static,Delta)
   #pragma omp parallel for schedule(dynamic)
